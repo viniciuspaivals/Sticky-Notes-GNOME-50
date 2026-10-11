@@ -1,0 +1,10 @@
+{
+    "uuid": "sticky-notes@viniciuspaivals",
+    "name": "Sticky Notes",
+    "description": "Uma extensão de notas autoadesivas.",
+    "settings-schema": "org.gnome.shell.extensions.sticky-notes",
+    "shell-version": [
+        "45", "46", "47", "50"
+    ],
+    "url": ""
+}

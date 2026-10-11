@@ -1,0 +1,111 @@
+/* ---------- Forma comum a todas as notas ---------- */
+.sticky-note {
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.sticky-note-header {
+    border-radius: 6px 6px 0 0;
+    padding: 4px 8px;
+}
+
+.sticky-note-title {
+    color: #4a4a4a;
+    font-weight: bold;
+}
+
+.sticky-note-close {
+    color: #4a4a4a;
+    padding: 0 6px;
+    border-radius: 4px;
+}
+
+.sticky-note-close:hover {
+    color: #ffffff;
+    background-color: #c0392b;
+}
+
+.sticky-note-text {
+    background-color: transparent;
+    color: #333333;
+    caret-color: #333333;
+    padding: 8px;
+    font-family: sans-serif;
+    font-size: 14px;
+    text-shadow: 0px 0px 1px rgba(0, 0, 0, 0.05);
+}
+
+.sticky-note-resize {
+    color: rgba(0, 0, 0, 0.35);
+    font-size: 12px;
+    padding: 0 4px 2px 0;
+}
+
+/* ---------- Barra de rolagem (Passo 9) ---------- */
+.sticky-note-scroll StScrollBar {
+    padding: 2px;
+}
+
+.sticky-note-scroll StScrollBar StButton#vhandle {
+    background-color: rgba(0, 0, 0, 0.35);
+    border-radius: 4px;
+}
+
+.sticky-note-scroll StScrollBar StButton#vhandle:hover {
+    background-color: rgba(0, 0, 0, 0.55);
+}
+
+/* ---------- Cores das notas (Passo 8) ---------- */
+.sticky-note-yellow { background-color: #fff59d; border-color: #e6d570; }
+.sticky-note-yellow .sticky-note-header { background-color: #ffe97f; }
+
+.sticky-note-pink { background-color: #f8bbd0; border-color: #e293b0; }
+.sticky-note-pink .sticky-note-header { background-color: #f48fb1; }
+
+.sticky-note-blue { background-color: #bbdefb; border-color: #90bde0; }
+.sticky-note-blue .sticky-note-header { background-color: #90caf9; }
+
+.sticky-note-green { background-color: #c8e6c9; border-color: #9bc79d; }
+.sticky-note-green .sticky-note-header { background-color: #a5d6a7; }
+
+/* ---------- Bolinhas do seletor de cor ---------- */
+.sticky-note-dot {
+    width: 12px;
+    height: 12px;
+    margin: 0 2px;
+    border-radius: 6px;
+    border: 1px solid rgba(0, 0, 0, 0.25);
+}
+
+.sticky-note-dot:hover {
+    border-color: rgba(0, 0, 0, 0.7);
+}
+
+.sticky-note-dot-yellow { background-color: #ffe97f; }
+.sticky-note-dot-pink { background-color: #f48fb1; }
+.sticky-note-dot-blue { background-color: #90caf9; }
+.sticky-note-dot-green { background-color: #a5d6a7; }
+/* ---------- Markdown: visualização e botão de modo (Passo 11) ---------- */
+.sticky-note-preview {
+    color: #333333;
+    padding: 8px;
+    font-family: sans-serif;
+    font-size: 14px;
+}
+
+.sticky-note-mode {
+    padding: 0 5px;
+    margin-right: 2px;
+    border-radius: 4px;
+}
+
+.sticky-note-mode:hover {
+    background-color: rgba(0, 0, 0, 0.12);
+}
+
+.sticky-note-mode-icon {
+    color: #4a4a4a;
+    icon-size: 14px;
+}
