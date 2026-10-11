@@ -2,7 +2,7 @@
 // markdown.js — converte um subconjunto de Markdown para o "markup" do
 // Pango, que é o formato de texto formatado que o St.Label entende.
 //
-// Este módulo é PURO: não importa nada de gi://, então funciona (e pode ser
+// Módulo PURO: não importa nada de gi://, então funciona (e pode ser
 // testado) fora do GNOME Shell.
 //
 // Suportado:
@@ -14,9 +14,27 @@
 // Cada linha do Markdown vira uma linha na nota (quebras são preservadas).
 // ---------------------------------------------------------------------
 
-const INDENT = '\u2003';           // "espaço em": largura de um caractere M
-const BULLETS = ['•', '◦', '▪'];   // marcadores por nível de aninhamento
+const INDENT = '\u2003';              // "espaço em": largura de um caractere M
+const BULLETS = ['•', '◦', '▪'];      // marcadores por nível de aninhamento
 const MAX_LEVEL = 4;
+const HEADING_SIZES = ['x-large', 'large'];  // níveis 3+ usam 'medium'
+
+// Marcador temporário usado para proteger trechos de código. É removido do
+// texto de entrada antes do uso, então nunca colide com conteúdo do usuário.
+const SLOT = '\u0000';
+const SLOT_PATTERN = new RegExp(`${SLOT}(\\d+)${SLOT}`, 'g');
+
+// Ênfases, aplicadas NESTA ordem. O (?!\s) e o (?<!\s) exigem que o
+// marcador "cole" no texto, para que "2 * 3 * 4" não vire itálico.
+// "_itálico_" só vale entre palavras, para não quebrar snake_case.
+const EMPHASIS_RULES = [
+    [/\*\*\*(?!\s)(.+?)(?<!\s)\*\*\*/g, '<b><i>$1</i></b>'],
+    [/\*\*(?!\s)(.+?)(?<!\s)\*\*/g, '<b>$1</b>'],
+    [/__(?!\s)(.+?)(?<!\s)__/g, '<b>$1</b>'],
+    [/\*(?!\s)(.+?)(?<!\s)\*/g, '<i>$1</i>'],
+    [/(^|[^\w])_(?!\s)(.+?)(?<!\s)_(?=[^\w]|$)/g, '$1<i>$2</i>'],
+    [/~~(?!\s)(.+?)(?<!\s)~~/g, '<s>$1</s>'],
+];
 
 // No Pango, <, > e & têm significado especial e PRECISAM ser escapados.
 export function escapeMarkup(text) {
@@ -30,7 +48,7 @@ export function escapeMarkup(text) {
 // Pango recusar o texto inteiro, então preferimos cair para texto simples.
 function isWellFormed(markup) {
     const stack = [];
-    const tag = /<(\/?)([a-z]+)(?:\s[^>]*)?>/g;
+    const tag = /<(\/?)([a-z]+)(?:\s[^>]*)?>/g;   // local: 'g' guarda estado
     let match;
 
     while ((match = tag.exec(markup)) !== null) {
@@ -46,11 +64,13 @@ function isWellFormed(markup) {
 
 // Formatação DENTRO de uma linha: negrito, itálico, código, links...
 function inline(text) {
+    const source = text.replaceAll(SLOT, '');
+
     // 1. Protege os trechos de código: nada dentro deles deve ser formatado
     const codes = [];
-    let s = text.replace(/`([^`]+)`/g, (_, code) => {
+    let s = source.replace(/`([^`]+)`/g, (_, code) => {
         codes.push(code);
-        return `\u0000${codes.length - 1}\u0000`;
+        return `${SLOT}${codes.length - 1}${SLOT}`;
     });
 
     // 2. Escapa o que sobrou (antes de criarmos as NOSSAS tags)
@@ -62,32 +82,26 @@ function inline(text) {
         '<span foreground="#1a5fb4"><u>$1</u></span>'
     );
 
-    // 4. Ênfases. O (?!\s) e o (?<!\s) exigem que o marcador "cole" no texto,
-    //    para que "2 * 3 * 4" não vire itálico.
-    s = s.replace(/\*\*\*(?!\s)(.+?)(?<!\s)\*\*\*/g, '<b><i>$1</i></b>');
-    s = s.replace(/\*\*(?!\s)(.+?)(?<!\s)\*\*/g, '<b>$1</b>');
-    s = s.replace(/__(?!\s)(.+?)(?<!\s)__/g, '<b>$1</b>');
-    s = s.replace(/\*(?!\s)(.+?)(?<!\s)\*/g, '<i>$1</i>');
-    // "_itálico_" só vale entre palavras (para não quebrar snake_case)
-    s = s.replace(/(^|[^\w])_(?!\s)(.+?)(?<!\s)_(?=[^\w]|$)/g, '$1<i>$2</i>');
-    s = s.replace(/~~(?!\s)(.+?)(?<!\s)~~/g, '<s>$1</s>');
+    // 4. Ênfases
+    for (const [pattern, replacement] of EMPHASIS_RULES)
+        s = s.replace(pattern, replacement);
 
     // 5. Devolve os trechos de código
-    s = s.replace(/\u0000(\d+)\u0000/g, (_, i) => `<tt>${escapeMarkup(codes[i])}</tt>`);
+    s = s.replace(SLOT_PATTERN, (_, i) => `<tt>${escapeMarkup(codes[i])}</tt>`);
 
     // Se as ênfases se cruzaram (ex.: **a *b** c*), o markup fica inválido:
     // nesse caso mostramos a linha como texto simples em vez de perder tudo.
-    return isWellFormed(s) ? s : escapeMarkup(text.replace(/\u0000/g, ''));
+    return isWellFormed(s) ? s : escapeMarkup(source);
 }
 
-function indentOf(spaces) {
-    const level = Math.min(Math.floor(spaces.length / 2), MAX_LEVEL);
-    return INDENT.repeat(level);
+// Nível de aninhamento de uma lista: 2 espaços = 1 nível
+function levelOf(spaces) {
+    return Math.min(Math.floor(spaces.length / 2), MAX_LEVEL);
 }
 
 export function markdownToPango(markdown) {
     const lines = markdown
-        .replace(/\u0000/g, '')
+        .replaceAll(SLOT, '')
         .replace(/\r\n?/g, '\n')
         .split('\n');
 
@@ -110,7 +124,7 @@ export function markdownToPango(markdown) {
 
         // --- Títulos
         if ((m = line.match(/^(#{1,6})\s+(.*?)(?:\s+#+)?\s*$/))) {
-            const size = ['x-large', 'large'][m[1].length - 1] ?? 'medium';
+            const size = HEADING_SIZES[m[1].length - 1] ?? 'medium';
             out.push(`<span size="${size}" weight="bold">${inline(m[2])}</span>`);
             continue;
         }
@@ -129,8 +143,8 @@ export function markdownToPango(markdown) {
 
         // --- Lista (com marcadores ou tarefas)
         if ((m = line.match(/^(\s*)[-*+]\s+(.*)$/))) {
-            const indent = indentOf(m[1]);
-            const level = Math.min(Math.floor(m[1].length / 2), MAX_LEVEL);
+            const level = levelOf(m[1]);
+            const indent = INDENT.repeat(level);
             const task = m[2].match(/^\[( |x|X)\]\s+(.*)$/);
 
             if (task) {
@@ -146,7 +160,7 @@ export function markdownToPango(markdown) {
 
         // --- Lista numerada
         if ((m = line.match(/^(\s*)(\d+)[.)]\s+(.*)$/))) {
-            out.push(`${indentOf(m[1])}${m[2]}. ${inline(m[3])}`);
+            out.push(`${INDENT.repeat(levelOf(m[1]))}${m[2]}. ${inline(m[3])}`);
             continue;
         }
 
