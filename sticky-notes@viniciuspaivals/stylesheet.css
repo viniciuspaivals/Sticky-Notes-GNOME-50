@@ -1,4 +1,4 @@
-/* ---------- Forma comum a todas as notas ---------- */
+/* ---------- PADRÃO DE TODAS AS NOTAS ---------- */
 .sticky-note {
     border-width: 1px;
     border-style: solid;
@@ -43,7 +43,7 @@
     padding: 0 4px 2px 0;
 }
 
-/* ---------- Barra de rolagem (Passo 9) ---------- */
+/* ---------- BARRA DE ROLAGEM ---------- */
 .sticky-note-scroll StScrollBar {
     padding: 2px;
 }
@@ -57,7 +57,7 @@
     background-color: rgba(0, 0, 0, 0.55);
 }
 
-/* ---------- Cores das notas (Passo 8) ---------- */
+/* ---------- CORES DAS NOTAS ---------- */
 .sticky-note-yellow { background-color: #fff59d; border-color: #e6d570; }
 .sticky-note-yellow .sticky-note-header { background-color: #ffe97f; }
 
@@ -70,7 +70,7 @@
 .sticky-note-green { background-color: #c8e6c9; border-color: #9bc79d; }
 .sticky-note-green .sticky-note-header { background-color: #a5d6a7; }
 
-/* ---------- Bolinhas do seletor de cor ---------- */
+/* ---------- SELETORES DE CORES ---------- */
 .sticky-note-dot {
     width: 12px;
     height: 12px;
@@ -87,7 +87,7 @@
 .sticky-note-dot-pink { background-color: #f48fb1; }
 .sticky-note-dot-blue { background-color: #90caf9; }
 .sticky-note-dot-green { background-color: #a5d6a7; }
-/* ---------- Markdown: visualização e botão de modo (Passo 11) ---------- */
+/* ---------- Markdown: VISUALIZAÇÃO E BOTÃO DE MODO ---------- */
 .sticky-note-preview {
     color: #333333;
     padding: 8px;
@@ -108,4 +108,9 @@
 .sticky-note-mode-icon {
     color: #4a4a4a;
     icon-size: 14px;
+}
+
+/* ---------- NOTAS MINIMIZADAS ---------- */
+.sticky-note-minimized .sticky-note-header {
+    border-radius: 5px;
 }

@@ -53,6 +53,7 @@ export function createNoteData(data = {}, fallbackX = 100, fallbackY = 100) {
         height: toInt(data.height, DEFAULT_HEIGHT),
         color: COLORS.includes(data.color) ? data.color : DEFAULT_COLOR,
         preview: data.preview === true,
+        minimized: data.minimized === true,
     };
 }
 
@@ -78,16 +79,24 @@ export const StickyNote = GObject.registerClass({
         this.noteData = noteData;
         this._color = noteData.color;
         this._previewMode = false;
+        this._minimized = false;
 
         this._applyColor();
         this.set_size(noteData.width, noteData.height);
 
-        this.add_child(this._buildHeader());
-        this.add_child(this._buildBody());
-        this.add_child(this._buildFooter());
+        this._header = this._buildHeader();
+        this._body = this._buildBody();
+        this._footer = this._buildFooter();
+
+        this.add_child(this._header);
+        this.add_child(this._body);
+        this.add_child(this._footer);
 
         // Notas salvas em modo de visualização reabrem formatadas
         this._setPreviewMode(noteData.preview, false);
+
+        if (noteData.minimized)
+            this.setMinimized(true, false);
     }
 
     // --- Construção da interface -----------------------------------------
@@ -106,7 +115,13 @@ export const StickyNote = GObject.registerClass({
             y_align: Clutter.ActorAlign.CENTER,
             reactive: true,
         });
-        title.connect('button-press-event', (_actor, event) => this._beginMove(event));
+        title.connect('button-press-event', (_actor, event) => {
+            if (event.get_click_count?.() === 2) {
+                this.setMinimized(!this._minimized);
+                return Clutter.EVENT_STOP;
+            }
+            return this._beginMove(event);
+        });
 
         const palette = new St.BoxLayout({ y_align: Clutter.ActorAlign.CENTER });
         for (const name of COLORS) {
@@ -120,12 +135,12 @@ export const StickyNote = GObject.registerClass({
 
         // Alterna entre EDITAR (Markdown puro) e VISUALIZAR (formatado)
         this._modeIcon = new St.Icon({ style_class: 'sticky-note-mode-icon' });
-        const modeButton = new St.Button({
+        this._modeButton = new St.Button({
             style_class: 'sticky-note-mode',
             y_align: Clutter.ActorAlign.CENTER,
             child: this._modeIcon,
         });
-        modeButton.connect('clicked', () => this._setPreviewMode(!this._previewMode));
+        this._modeButton.connect('clicked', () => this._setPreviewMode(!this._previewMode));
 
         const closeButton = new St.Button({
             style_class: 'sticky-note-close',
@@ -133,7 +148,7 @@ export const StickyNote = GObject.registerClass({
         });
         closeButton.connect('clicked', () => this.emit('close-requested'));
 
-        for (const child of [title, palette, modeButton, closeButton])
+        for (const child of [title, palette, this._modeButton, closeButton])
             header.add_child(child);
 
         return header;
@@ -279,6 +294,37 @@ export const StickyNote = GObject.registerClass({
         }
     }
 
+    get isMinimized() {
+        return this._minimized;
+    }
+
+    setMinimized(minimized, notify = true) {
+        if (this._minimized === minimized)
+            return;
+
+        this._minimized = minimized;
+
+        if (minimized) {
+            this.add_style_class_name('sticky-note-minimized');
+            this._body.visible = false;
+            this._footer.visible = false;
+            if (this._modeButton)
+                this._modeButton.visible = false;
+            this.height = -1;
+        } else {
+            this.remove_style_class_name('sticky-note-minimized');
+            this._body.visible = true;
+            this._footer.visible = true;
+            if (this._modeButton)
+                this._modeButton.visible = true;
+            this.set_size(this.noteData.width, this.noteData.height);
+            this.ensureOnScreen();
+        }
+
+        if (notify)
+            this._update({ minimized });
+    }
+
     // --- Limites da tela -------------------------------------------------
 
     // Devolve a área útil (sem painel/dock) do monitor que contém o ponto (x, y)
@@ -315,14 +361,22 @@ export const StickyNote = GObject.registerClass({
             return;
 
         const width = clampInt(this.width, MIN_WIDTH, area.width);
-        const height = clampInt(this.height, MIN_HEIGHT, area.height);
+        const curHeight = this._minimized ? this.height : this.noteData.height;
+        const height = clampInt(curHeight, this._minimized ? 0 : MIN_HEIGHT, area.height);
         const x = clampInt(this.x, area.x, area.x + area.width - width);
         const y = clampInt(this.y, area.y, area.y + area.height - height);
 
-        this.set_size(width, height);
-        this.set_position(x, y);
+        if (!this._minimized)
+            this.set_size(width, height);
+        else
+            this.set_position(x, y);
 
-        Object.assign(this.noteData, { x, y, width, height });
+        Object.assign(this.noteData, {
+            x,
+            y,
+            width,
+            height: this._minimized ? this.noteData.height : height,
+        });
     }
 
     // --- Rolagem que acompanha o cursor ----------------------------------

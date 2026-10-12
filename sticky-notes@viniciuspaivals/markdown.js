@@ -1,26 +1,24 @@
-// ---------------------------------------------------------------------
-// markdown.js — converte um subconjunto de Markdown para o "markup" do
-// Pango, que é o formato de texto formatado que o St.Label entende.
-//
-// Módulo PURO: não importa nada de gi://, então funciona (e pode ser
-// testado) fora do GNOME Shell.
-//
-// Suportado:
-//   # Título (níveis 1 a 6)      **negrito**   *itálico*   ***ambos***
-//   ~~riscado~~                  `código`      [texto](url)
-//   - itens, * itens, + itens    1. numerados  - [ ] / - [x] tarefas
-//   > citação                    --- linha     ``` blocos de código ```
-//
-// Cada linha do Markdown vira uma linha na nota (quebras são preservadas).
-// ---------------------------------------------------------------------
+/*
+markdown.js - CONVERTE UM SUBCONJUTNO DE MARKDOWN PARA O "markup"
+Pango, QUE É O FORMATO DE TEXTO FORMATADO QUE O St.Label UTILIZA.
 
-const INDENT = '\u2003';              // "espaço em": largura de um caractere M
-const BULLETS = ['•', '◦', '▪'];      // marcadores por nível de aninhamento
+SUPORTADO:
+  # Título (níveis 1 a 6)      **negrito**   *itálico*   ***ambos***
+  ~~riscado~~                  `código`      [texto](url)
+  - itens, * itens, + itens    1. numerados  - [ ] / - [x] tarefas
+  > citação                    --- linha     ``` blocos de código ```
+//CADA LINHA DO MARKDOWN VIRA UMA LINHA NA NOTA (QUEBRAS SÃO PRESERVADAS)
+*/
+
+const INDENT = '\u2003';              //"ESPAÇO EM": LARGURA DE UM CARACTERE M
+const BULLETS = ['•', '◦', '▪'];      //MARCADORES POR NÍVEL DE ANINHAMENTO
 const MAX_LEVEL = 4;
-const HEADING_SIZES = ['x-large', 'large'];  // níveis 3+ usam 'medium'
+const HEADING_SIZES = ['x-large', 'large'];  //NÍVEIS 3+ USAM 'MEDIUM'
 
-// Marcador temporário usado para proteger trechos de código. É removido do
-// texto de entrada antes do uso, então nunca colide com conteúdo do usuário.
+/* 
+MARCADOR TEMPORÁRIO USADO PARA PROTEGER TRECHOS DE CÓDIGO. É REMOVIDO DO 
+TEXTO DE ENTADA ANTES DO USO, ENTÃO NUNCA COLIDE COM CONTEÚDO DO USUÁRIO
+*/
 const SLOT = '\u0000';
 const SLOT_PATTERN = new RegExp(`${SLOT}(\\d+)${SLOT}`, 'g');
 
